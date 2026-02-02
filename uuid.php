@@ -2,7 +2,7 @@
 <?php
 
     //content
-    $content = file_get_contents('old.yaml');
+    $content = file_get_contents('zabbix_template_apt.yml');
     $content = preg_replace_callback("|uuid: (.*)\n|U", function ($matches) { return "uuid: ".str_replace('-', '', generateUUIDv4())."\n"; }, $content);
     
     $fp = fopen("new.yaml", "w");
@@ -23,8 +23,8 @@
         return $uuid;
     }
 
-
-    echo $content
+    file_put_contents('zabbix_template_apt.yml', $content);
+    
     
 
 ?>

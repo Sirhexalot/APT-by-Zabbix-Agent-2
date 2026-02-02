@@ -31,6 +31,7 @@ Add the UserParameter definitions to your Zabbix Agent 2 configuration:
 UserParameter=apt.security,apt-get -s upgrade | grep -ci ^inst.*security | tr -d '\n'
 UserParameter=apt.updates,apt-get -s upgrade | grep -iPc '^Inst((?!security).)*$' | tr -d '\n'
 UserParameter=apt.last.update.timestamp,stat -c %Y /var/lib/apt/periodic/update-success-stamp 2>/dev/null || echo 0
+UserParameter=apt.last.upgrade.timestamp,tac /var/log/apt/history.log* 2>/dev/null | awk '/^(Upgrade|Install):/ {found=1} found && /^End-Date:/ {gsub(/End-Date: /, ""); gsub(/  +/, " "); system("date -d \"" $0 "\" +%s"); exit}' 2>/dev/null || echo 0
 ```
 
 #### Option B: In a separate file (recommended)
@@ -42,6 +43,7 @@ UserParameter=apt.last.update.timestamp,stat -c %Y /var/lib/apt/periodic/update-
 UserParameter=apt.security,apt-get -s upgrade | grep -ci ^inst.*security | tr -d '\n'
 UserParameter=apt.updates,apt-get -s upgrade | grep -iPc '^Inst((?!security).)*$' | tr -d '\n'
 UserParameter=apt.last.update.timestamp,stat -c %Y /var/lib/apt/periodic/update-success-stamp 2>/dev/null || echo 0
+UserParameter=apt.last.upgrade.timestamp,tac /var/log/apt/history.log* 2>/dev/null | awk '/^(Upgrade|Install):/ {found=1} found && /^End-Date:/ {gsub(/End-Date: /, ""); gsub(/  +/, " "); system("date -d \"" $0 "\" +%s"); exit}' 2>/dev/null || echo 0
 ```
 
 2. Ensure the Include directive is enabled in `/etc/zabbix/zabbix_agent2.conf`:
@@ -57,7 +59,36 @@ Include=/etc/zabbix/zabbix_agent2.d/plugins.d/*.conf
 sudo systemctl restart zabbix-agent2
 ```
 
-### 3. Import Template into Zabbix
+### 3. Test the UserParameters
+
+Before importing the template, verify that all UserParameters work correctly:
+
+```bash
+# Test security updates counter
+sudo zabbix_agent2 -t apt.security
+
+# Test regular updates counter
+sudo zabbix_agent2 -t apt.updates
+
+# Test last package list update timestamp (apt update)
+sudo zabbix_agent2 -t apt.last.update.timestamp
+
+# Test last package upgrade timestamp (apt upgrade/install)
+sudo zabbix_agent2 -t apt.last.upgrade.timestamp
+```
+
+Expected output format:
+
+```
+apt.security                                  [t|3]
+apt.updates                                   [t|12]
+apt.last.update.timestamp                     [t|1738511234]
+apt.last.upgrade.timestamp                    [t|1738398765]
+```
+
+**Note**: If `apt.last.upgrade.timestamp` returns `0`, it means no upgrades have been logged in `/var/log/apt/history.log*` yet.
+
+### 4. Import Template into Zabbix
 
 1. Navigate to **Administration → Templates** in your Zabbix instance
 2. Click **Import**
@@ -111,9 +142,20 @@ The template automatically creates the following triggers:
 
 ### Items show "No data"
 
-1. Check configuration: `sudo zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t apt.security`
+1. Test the UserParameters manually:
+
+   ```bash
+   sudo zabbix_agent2 -t apt.security
+   sudo zabbix_agent2 -t apt.updates
+   sudo zabbix_agent2 -t apt.last.update.timestamp
+   sudo zabbix_agent2 -t apt.last.upgrade.timestamp
+   ```
+
 2. Check agent logs: `journalctl -u zabbix-agent2 -f`
-3. Restart the agent: `sudo systemctl restart zabbix-agent2`
+
+3. Verify the agent is in active mode and can reach the Zabbix server
+
+4. Restart the agent: `sudo systemctl restart zabbix-agent2`
 
 ### Permission Errors
 
