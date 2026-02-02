@@ -100,24 +100,24 @@ apt.last.upgrade.timestamp                    [t|1738398765]
 
 The template uses macros that you can customize:
 
-| Macro                          | Default Value | Description                                                                         |
-| ------------------------------ | ------------- | ----------------------------------------------------------------------------------- |
-| `{$WARN_DAYS}`                 | `30`          | Days after which a warning is issued if packages have not been upgraded            |
-| `{$WARN_DAYS_SECURITY}`        | `7`           | Days after which a warning is issued if security updates have not been installed   |
-| `{$MAX_NOT_INSTALLED_UPDATES}` | `5`           | Maximum number of pending updates before a warning is triggered                    |
+| Macro                          | Default Value | Description                                                                      |
+| ------------------------------ | ------------- | -------------------------------------------------------------------------------- |
+| `{$WARN_DAYS}`                 | `30`          | Days after which a warning is issued if packages have not been upgraded          |
+| `{$WARN_DAYS_SECURITY}`        | `7`           | Days after which a warning is issued if security updates have not been installed |
+| `{$MAX_NOT_INSTALLED_UPDATES}` | `5`           | Maximum number of pending updates before a warning is triggered                  |
 
 ## Items
 
 The template monitors the following metrics:
 
-| Item                                    | Key                            | Type      | Description                                               |
-| --------------------------------------- | ------------------------------ | --------- | --------------------------------------------------------- |
-| Available Security Updates              | `apt.security`                 | Active    | Number of available security updates                      |
-| Available Updates                       | `apt.updates`                  | Active    | Number of available regular updates                       |
-| Last package list update date (apt update)  | `apt.last.update.timestamp`    | Active    | Unix timestamp of the last package list update (apt update) |
-| Days since last package list update     | `apt.days.since.last.update`   | Dependent | Calculated number of days since apt update               |
-| Last package upgrade date (apt upgrade) | `apt.last.upgrade.timestamp`   | Active    | Unix timestamp of the last package upgrade/install       |
-| Days since last package upgrade         | `apt.days.since.last.upgrade`  | Dependent | Calculated number of days since apt upgrade              |
+| Item                                       | Key                           | Type      | Description                                                 |
+| ------------------------------------------ | ----------------------------- | --------- | ----------------------------------------------------------- |
+| Available Security Updates                 | `apt.security`                | Active    | Number of available security updates                        |
+| Available Updates                          | `apt.updates`                 | Active    | Number of available regular updates                         |
+| Last package list update date (apt update) | `apt.last.update.timestamp`   | Active    | Unix timestamp of the last package list update (apt update) |
+| Days since last package list update        | `apt.days.since.last.update`  | Dependent | Calculated number of days since apt update                  |
+| Last package upgrade date (apt upgrade)    | `apt.last.upgrade.timestamp`  | Active    | Unix timestamp of the last package upgrade/install          |
+| Days since last package upgrade            | `apt.days.since.last.upgrade` | Dependent | Calculated number of days since apt upgrade                 |
 
 ## Triggers
 
