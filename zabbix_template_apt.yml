@@ -1,0 +1,95 @@
+zabbix_export:
+  version: "7.4"
+  template_groups:
+    - uuid: beac15d7d4b7433996b70d2cf033d6af
+      name: Templates/Applications
+  templates:
+    - uuid: f2c3782e66d54f9099afca29b42407f6
+      template: "Ubuntu- Debian - Updates Management"
+      name: "Ubuntu- Debian - Updates Management"
+      description: |
+        Template for monitoring available updates and installation status
+
+        Requirements:
+        - Zabbix Agent 2 in Active mode
+        - UserParameters configured on agent
+
+        Agent Configuration (/etc/zabbix/zabbix_agent2.conf or /etc/zabbix/zabbix_agent2.d/userparameters_updates.conf):
+        UserParameter=apt.security,apt-get -s upgrade | grep -ci ^inst.*security | tr -d '\n'
+        UserParameter=apt.updates,apt-get -s upgrade | grep -iPc '^Inst((?!security).)*$' | tr -d '\n'
+        UserParameter=apt.last.update.timestamp,stat -c %Y /var/lib/apt/periodic/update-success-stamp 2>/dev/null || echo 0
+
+        Note: These commands use apt-get -s (simulation mode) which does not require root privileges
+        and can be run safely under the zabbix user.
+
+        After adding UserParameters, restart the agent:
+        systemctl restart zabbix-agent2
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: a96ce2fe280c4ed9af7c14b6d694f99a
+          name: "Days since last update"
+          type: DEPENDENT
+          key: apt.days.since.last.update
+          history: 30d
+          value_type: UNSIGNED
+          description: "Calculated number of days since last update"
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - "return Math.floor((Math.floor(new Date().getTime()/1000) - parseInt(value)) / 86400);"
+          master_item:
+            key: apt.last.update.timestamp
+          triggers:
+            - uuid: 613a0ee5a9364a09a5e17877519097d9
+              expression: "last(/Ubuntu- Debian - Updates Management/apt.days.since.last.update)>{$WARN_DAYS}"
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: "last(/Ubuntu- Debian - Updates Management/apt.days.since.last.update)<{$WARN_DAYS}"
+              name: "No updates performed for too long - {ITEM.LASTVALUE} days ago"
+              priority: WARNING
+              description: "Last update is longer than {$WARN_DAYS} days ago"
+              manual_close: "YES"
+        - uuid: 0e6519d6936c4a4db5890db40f7ec15d
+          name: "Last update installation date"
+          type: ZABBIX_ACTIVE
+          key: apt.last.update.timestamp
+          history: 30d
+          units: unixtime
+          description: "Unix timestamp of the last update run"
+        - uuid: 14786e27a3f54f1e9a4ea7031bd5d19c
+          name: "Number of available security updates"
+          type: ZABBIX_ACTIVE
+          key: apt.security
+          history: 30d
+          units: Updates
+          description: "Number of available security updates"
+          triggers:
+            - uuid: 1a0238d047c54aefbeac6b632c8cf802
+              expression: "last(/Ubuntu- Debian - Updates Management/apt.security)>0"
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: "last(/Ubuntu- Debian - Updates Management/apt.security)=0"
+              name: "Security updates available - {ITEM.LASTVALUE} updates"
+              priority: HIGH
+              description: "Security updates are available and should be installed"
+        - uuid: f3dad461d59e424dac08d7165cb9975d
+          name: "Number of available updates"
+          type: ZABBIX_ACTIVE
+          key: apt.updates
+          history: 30d
+          units: Updates
+          description: "Number of regular (non-security) updates available"
+          triggers:
+            - uuid: 347d91f25dea4532beff76c57ec691f7
+              expression: "last(/Ubuntu- Debian - Updates Management/apt.updates)>{$MAX_NOT_INSTALLED_UPDATES}"
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: "last(/Ubuntu- Debian - Updates Management/apt.updates)<{$MAX_NOT_INSTALLED_UPDATES}"
+              name: "Too many updates available - {ITEM.LASTVALUE}"
+              priority: WARNING
+              description: "The number of available updates exceeds the limit of {$MAX_NOT_INSTALLED_UPDATES}"
+      macros:
+        - macro: "{$MAX_NOT_INSTALLED_UPDATES}"
+          value: "5"
+          description: "Maximum number of uninstalled updates before alarm is triggered"
+        - macro: "{$WARN_DAYS}"
+          value: "30"
+          description: "Warning if last updates are older than X days"
