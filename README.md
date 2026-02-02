@@ -100,37 +100,52 @@ apt.last.upgrade.timestamp                    [t|1738398765]
 
 The template uses macros that you can customize:
 
-| Macro                          | Default Value | Description                                                            |
-| ------------------------------ | ------------- | ---------------------------------------------------------------------- |
-| `{$WARN_DAYS}`                 | `30`          | Days after which a warning is issued if no updates have been performed |
-| `{$MAX_NOT_INSTALLED_UPDATES}` | `5`           | Maximum number of pending updates before a warning is triggered        |
+| Macro                          | Default Value | Description                                                                         |
+| ------------------------------ | ------------- | ----------------------------------------------------------------------------------- |
+| `{$WARN_DAYS}`                 | `30`          | Days after which a warning is issued if packages have not been upgraded            |
+| `{$WARN_DAYS_SECURITY}`        | `7`           | Days after which a warning is issued if security updates have not been installed   |
+| `{$MAX_NOT_INSTALLED_UPDATES}` | `5`           | Maximum number of pending updates before a warning is triggered                    |
 
 ## Items
 
 The template monitors the following metrics:
 
-| Item                       | Key                          | Type      | Description                          |
-| -------------------------- | ---------------------------- | --------- | ------------------------------------ |
-| Available Security Updates | `apt.security`               | Active    | Number of available security updates |
-| Available Updates          | `apt.updates`                | Active    | Number of available regular updates  |
-| Last Update Timestamp      | `apt.last.update.timestamp`  | Active    | Unix timestamp of the last update    |
-| Days Since Last Update     | `apt.days.since.last.update` | Dependent | Calculated number of days            |
+| Item                                    | Key                            | Type      | Description                                               |
+| --------------------------------------- | ------------------------------ | --------- | --------------------------------------------------------- |
+| Available Security Updates              | `apt.security`                 | Active    | Number of available security updates                      |
+| Available Updates                       | `apt.updates`                  | Active    | Number of available regular updates                       |
+| Last package list update date (apt update)  | `apt.last.update.timestamp`    | Active    | Unix timestamp of the last package list update (apt update) |
+| Days since last package list update     | `apt.days.since.last.update`   | Dependent | Calculated number of days since apt update               |
+| Last package upgrade date (apt upgrade) | `apt.last.upgrade.timestamp`   | Active    | Unix timestamp of the last package upgrade/install       |
+| Days since last package upgrade         | `apt.days.since.last.upgrade`  | Dependent | Calculated number of days since apt upgrade              |
 
 ## Triggers
 
 The template automatically creates the following triggers:
 
-1. **Security Updates Available** (HIGH)
-   - Trigger: Security-relevant updates are available
-   - Impact: Highest priority
+1. **Package list not updated for {ITEM.LASTVALUE} days (apt update)** (WARNING)
+   - Trigger: Package list has not been updated for longer than `{$WARN_DAYS}` days
+   - Action: Ensure `apt update` is regularly scheduled
 
-2. **Too Many Updates Available** (WARNING)
-   - Trigger: More than `{$MAX_NOT_INSTALLED_UPDATES}` updates pending
-   - Recoverable: Manually
+2. **Package list not updated for {ITEM.LASTVALUE} days (security)** (AVERAGE)
+   - Trigger: Package list has not been updated for longer than `{$WARN_DAYS_SECURITY}` days
+   - Action: Early warning for security updates
 
-3. **No Updates Performed** (WARNING)
-   - Trigger: Last update is older than `{$WARN_DAYS}` days
-   - Recoverable: Manually
+3. **No package upgrades installed for {ITEM.LASTVALUE} days** (WARNING)
+   - Trigger: No package upgrades (apt upgrade) performed for longer than `{$WARN_DAYS}` days
+   - Action: Schedule system updates
+
+4. **No security package upgrades for {ITEM.LASTVALUE} days** (AVERAGE)
+   - Trigger: No security updates installed for longer than `{$WARN_DAYS_SECURITY}` days
+   - Action: Urgent: Install critical security updates
+
+5. **Security updates available** (HIGH)
+   - Trigger: Security-relevant updates are available for installation
+   - Action: Review and apply security updates immediately
+
+6. **Too many updates available** (WARNING)
+   - Trigger: More than `{$MAX_NOT_INSTALLED_UPDATES}` regular updates pending
+   - Action: Schedule and apply available updates
 
 ## Security
 
