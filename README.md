@@ -9,8 +9,8 @@ A Zabbix template for monitoring package updates on Debian/Ubuntu systems with Z
 - ⏰ **Update History**: Tracks the timestamp of the last system update
 - ⚠️ **Automatic Alerts**:
   - Alert for available security updates (HIGH)
-  - Warning for too many pending updates
-  - Warning if updates haven't been performed for too long
+  - Alert for available maintenance updates (HIGH)
+  - Warning if package lists or upgrades are stale
 
 ## Requirements
 
@@ -100,11 +100,10 @@ apt.last.upgrade.timestamp                    [t|1738398765]
 
 The template uses macros that you can customize:
 
-| Macro                          | Default Value | Description                                                                      |
-| ------------------------------ | ------------- | -------------------------------------------------------------------------------- |
-| `{$WARN_DAYS}`                 | `30`          | Days after which a warning is issued if packages have not been upgraded          |
-| `{$WARN_DAYS_SECURITY}`        | `7`           | Days after which a warning is issued if security updates have not been installed |
-| `{$MAX_NOT_INSTALLED_UPDATES}` | `5`           | Maximum number of pending updates before a warning is triggered                  |
+| Macro                   | Default Value | Description                                                           |
+| ----------------------- | ------------- | --------------------------------------------------------------------- |
+| `{$WARN_DAYS}`          | `30`          | Legacy threshold (currently unused)                                   |
+| `{$WARN_DAYS_SECURITY}` | `7`           | Days after which a warning is issued if updates have not been applied |
 
 ## Items
 
@@ -123,28 +122,20 @@ The template monitors the following metrics:
 
 The template automatically creates the following triggers:
 
-1. **Package list not updated for {ITEM.LASTVALUE} days (apt update)** (WARNING)
-   - Trigger: Package list has not been updated for longer than `{$WARN_DAYS}` days
+1. **Package list not updated for {ITEM.LASTVALUE} days** (WARNING)
+   - Trigger: Package list has not been updated for longer than `{$WARN_DAYS_SECURITY}` days
    - Action: Ensure `apt update` is regularly scheduled
 
-2. **Package list not updated for {ITEM.LASTVALUE} days (security)** (AVERAGE)
-   - Trigger: Package list has not been updated for longer than `{$WARN_DAYS_SECURITY}` days
-   - Action: Early warning for security updates
-
-3. **No package upgrades installed for {ITEM.LASTVALUE} days** (WARNING)
-   - Trigger: No package upgrades (apt upgrade) performed for longer than `{$WARN_DAYS}` days
+2. **No package upgrades installed for {ITEM.LASTVALUE} days (apt upgrade)** (WARNING)
+   - Trigger: No package upgrades (apt upgrade) performed for longer than `{$WARN_DAYS_SECURITY}` days
    - Action: Schedule system updates
 
-4. **No security package upgrades for {ITEM.LASTVALUE} days** (AVERAGE)
-   - Trigger: No security updates installed for longer than `{$WARN_DAYS_SECURITY}` days
-   - Action: Urgent: Install critical security updates
-
-5. **Security updates available** (HIGH)
+3. **Security updates available** (HIGH)
    - Trigger: Security-relevant updates are available for installation
    - Action: Review and apply security updates immediately
 
-6. **Too many updates available** (WARNING)
-   - Trigger: More than `{$MAX_NOT_INSTALLED_UPDATES}` regular updates pending
+4. **Maintenance updates available** (HIGH)
+   - Trigger: Regular updates are available for installation
    - Action: Schedule and apply available updates
 
 ## Security
