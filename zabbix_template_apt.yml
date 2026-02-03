@@ -47,20 +47,12 @@ zabbix_export:
           master_item:
             key: apt.last.update.timestamp
           triggers:
-            - uuid: b67242e918df49c08c7848ce5e81d3e2
-              expression: "last(/Ubuntu- Debian - Updates Management/apt.days.since.last.update)>{$WARN_DAYS}"
-              recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: "last(/Ubuntu- Debian - Updates Management/apt.days.since.last.update)<={$WARN_DAYS}"
-              name: "Package list not updated for {ITEM.LASTVALUE} days (apt update)"
-              priority: WARNING
-              description: "Package list update (apt update) not performed for longer than {$WARN_DAYS} days"
-              manual_close: "YES"
             - uuid: e3e3683791ec4be8b76d396a904613ab
               expression: "last(/Ubuntu- Debian - Updates Management/apt.days.since.last.update)>{$WARN_DAYS_SECURITY}"
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: "last(/Ubuntu- Debian - Updates Management/apt.days.since.last.update)<={$WARN_DAYS_SECURITY}"
-              name: "Package list not updated for {ITEM.LASTVALUE} days (security)"
-              priority: AVERAGE
+              name: "Package list not updated for {ITEM.LASTVALUE} days"
+              priority: WARNING
               description: "Package list update (apt update) not performed for longer than {$WARN_DAYS_SECURITY} days"
               manual_close: "YES"
         - uuid: e27b527b65ee4b5d87e30287bef0a738
@@ -96,21 +88,13 @@ zabbix_export:
           master_item:
             key: apt.last.upgrade.timestamp
           triggers:
-            - uuid: 51420b15599e4a3ebfbde507bcebb97b
-              expression: "last(/Ubuntu- Debian - Updates Management/apt.days.since.last.upgrade)>{$WARN_DAYS}"
-              recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: "last(/Ubuntu- Debian - Updates Management/apt.days.since.last.upgrade)<={$WARN_DAYS}"
-              name: "No package upgrades installed for {ITEM.LASTVALUE} days"
-              priority: WARNING
-              description: "No package upgrades (apt upgrade) performed for longer than {$WARN_DAYS} days"
-              manual_close: "YES"
             - uuid: 92ccd3fab0a544e7941f8511d203a0ce
               expression: "last(/Ubuntu- Debian - Updates Management/apt.days.since.last.upgrade)>{$WARN_DAYS_SECURITY}"
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: "last(/Ubuntu- Debian - Updates Management/apt.days.since.last.upgrade)<={$WARN_DAYS_SECURITY}"
-              name: "No security package upgrades for {ITEM.LASTVALUE} days"
-              priority: AVERAGE
-              description: "No package upgrades (apt upgrade) performed for longer than {$WARN_DAYS_SECURITY} days (security risk)"
+              name: "No package upgrades installed for {ITEM.LASTVALUE} days (apt upgrade)"
+              priority: WARNING
+              description: "No package upgrades (apt upgrade) performed for longer than {$WARN_DAYS_SECURITY} days"
               manual_close: "YES"
         - uuid: 9bcf3d1d5dd64c8198b17e26a2a6b1f7
           name: "Number of available security updates"
@@ -136,12 +120,12 @@ zabbix_export:
           description: "Number of regular (non-security) updates available"
           triggers:
             - uuid: a814ee654abb4886b3486d5d3b490f2d
-              expression: "last(/Ubuntu- Debian - Updates Management/apt.updates)>{$MAX_NOT_INSTALLED_UPDATES}"
+              expression: "last(/Ubuntu- Debian - Updates Management/apt.updates)>0"
               recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: "last(/Ubuntu- Debian - Updates Management/apt.updates)<={$MAX_NOT_INSTALLED_UPDATES}"
-              name: "Too many updates available - {ITEM.LASTVALUE}"
-              priority: WARNING
-              description: "The number of available updates exceeds the limit of {$MAX_NOT_INSTALLED_UPDATES}"
+              recovery_expression: "last(/Ubuntu- Debian - Updates Management/apt.updates)=0"
+              name: "Maintenance updates available - {ITEM.LASTVALUE} updates"
+              priority: HIGH
+              description: "Maintenance/Regular updates are available and should be installed"
       macros:
         - macro: "{$MAX_NOT_INSTALLED_UPDATES}"
           value: "5"
